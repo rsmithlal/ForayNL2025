@@ -1,0 +1,42 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Virtual envs (nested too)
+env/
+.venv/
+venv/
+FORAY_DJANGO/env/
+FORAY_DJANGO/.venv/
+FORAY_DJANGO/venv/
+
+# Django DB (nested too)
+db.sqlite3
+FORAY_DJANGO/db.sqlite3
+
+# Static/media (if any)
+staticfiles/
+media/
+FORAY_DJANGO/staticfiles/
+FORAY_DJANGO/media/
+
+# Config / secrets
+*.env
+.env.*
+
+# Data – don't push CSV/Excel
+**/data/**
+FORAY_DJANGO/data/**
+*.csv
+*.tsv
+*.xlsx
+*.xls
