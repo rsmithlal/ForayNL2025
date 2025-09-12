@@ -1,4 +1,4 @@
-# ForayNL2025 — Django App (Code-Only)
+# ForayNL2025 — Django App
 
 A small Django app for **Foray name matching** with **MycoBank** context.
 
@@ -6,7 +6,7 @@ A small Django app for **Foray name matching** with **MycoBank** context.
 - **Review** mismatches and record validated names
 - See **MycoBank** exact hits and **similarity scores**
 
-> This branch intentionally **excludes large files** (SQLite DB, CSV/Excel, venv). See `.gitignore`.
+> This branch excludes large SQLite files. See `.gitignore`.
 
 ---
 
@@ -21,10 +21,6 @@ A small Django app for **Foray name matching** with **MycoBank** context.
 - [Key Pages](#key-pages)
 - [Data Models](#data-models)
 - [Management Commands](#management-commands)
-- [Git Hygiene (code-only)](#git-hygiene-codeonly)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
 
 ---
 
@@ -63,6 +59,7 @@ FORAY_DJANGO/
         myco_perfect.html
         myco_mismatch.html
     static/                         # (can be empty)
+    data/
 requirements.txt
 README.md
 .gitignore
@@ -91,8 +88,6 @@ README.md
 - For **mismatches**:
   - Compute **RapidFuzz** similarity for each of the three Foray names (ORG/CONF/FORAY) against Myco candidates grouped by first letter.
   - Pick the **best overall** candidate; store its **MycoBank ID/Name** and an explanation like `ORG → UPDATED` (meaning ORG matched Myco **Current name**) or `CONF → TAXON`, etc.
-- We **do not** bulk-save the entire Myco CSV to the DB (too slow and huge).  
-  Instead, we only save **needed** rows (perfect hits + chosen candidates) in bulk.
 
 This makes the pipeline fast and the UI always shows the **most informative** Myco name.
 
@@ -244,38 +239,3 @@ git commit -m "chore: code-only initial commit"
 git push -u origin FORAY_DJANGO
 ```
 
----
-
-## Troubleshooting
-
-- **Static warning**:  
-  `(staticfiles.W004)` means `core/static/` doesn’t exist. Create it (empty is fine) or remove `STATICFILES_DIRS` from settings.
-  ```bash
-  mkdir -p core/static
-  ```
-
-- **Pipeline “stuck”**:  
-  If nothing logs for a long time, ensure your pipeline isn’t row-by-row upserting the entire Myco CSV. This repo’s pipeline only bulk-saves **needed** Myco rows.
-
-- **Interpreter mismatch in VS Code**:  
-  Select the venv: *Ctrl+Shift+P → “Python: Select Interpreter” → `.venv/Scripts/python.exe` (Windows) or `.venv/bin/python` (macOS/Linux).
-
-- **Windows PowerShell activation policy**:
-  ```powershell
-  Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-  .\.venv\Scripts\Activate.ps1
-  ```
-
----
-
-## Contributing
-
-- Keep commits **small** and **descriptive** (e.g., `feat(review): allow skip without validation`).
-- Do **not** commit data/DB/venv.
-- Open a PR to `FORAY_DJANGO` with a short summary + screenshots if UI changes.
-
----
-
-## License
-
-TBD. Add a license if you plan to accept external contributions.
