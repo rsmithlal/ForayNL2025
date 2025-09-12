@@ -1,0 +1,163 @@
+{% load widget_tweaks %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Review Match</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .badge-pill { border-radius: 50rem; }
+  </style>
+</head>
+<body class="bg-light">
+<div class="container py-4">
+
+  <!-- Progress -->
+  <div class="alert alert-info" role="status" aria-live="polite">
+    <strong>Review Progress:</strong> {{ reviewed }} / {{ total }} reviewed ({{ percent }}%)
+    <div class="progress mt-2" style="height: 10px;">
+      <div class="progress-bar" role="progressbar" style="width: {{ percent }}%;" aria-valuenow="{{ percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+  </div>
+
+  <h2 class="mb-3">🧪 Review Match</h2>
+
+  <!-- Foray comparison -->
+  <table class="table table-bordered align-middle bg-white">
+    <tbody>
+      <tr>
+        <th class="w-25">Org Entry</th>
+        <td>{{ record.org_entry|default:"—" }}</td>
+      </tr>
+      <tr>
+        <th>Conf Name</th>
+        <td>{{ record.conf_name|default:"—" }}</td>
+      </tr>
+      <tr>
+        <th>Foray Name</th>
+        <td>{{ record.foray_name|default:"—" }}</td>
+      </tr>
+      <tr>
+        <th>System Explanation</th>
+        <td>
+          {% if record.explanation == 'ORG_CONF_MATCH' %}
+            <span class="badge bg-secondary">ORG ↔ CONF</span>
+          {% elif record.explanation == 'ORG_FORAY_MATCH' %}
+            <span class="badge bg-secondary">ORG ↔ FORAY</span>
+          {% elif record.explanation == 'CONF_FORAY_MATCH' %}
+            <span class="badge bg-secondary">CONF ↔ FORAY</span>
+          {% elif record.explanation == 'ALL_DIFFERENT' %}
+            <span class="badge bg-danger">ALL DIFFERENT</span>
+          {% else %}
+            <span class="badge bg-light text-dark">{{ record.explanation|default:"—" }}</span>
+          {% endif %}
+          {% for p in pairs %}
+            <span class="badge bg-primary ms-1">{{ p }}</span>
+          {% endfor %}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- MycoBank context -->
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">MycoBank Context</h5>
+
+          {% if myco_perfect %}
+            <p class="mb-1"><strong>ID:</strong> {{ myco_perfect.mycobank_id }}</p>
+            <p class="mb-1"><strong>Name:</strong> {{ myco_perfect.mycobank_name }}</p>
+            <a class="btn btn-sm btn-outline-info" href="{% url 'core:detail' record.foray_id %}">Open Detail</a>
+
+          {% elif myco_candidate %}
+            <p class="mb-1"><span class="badge bg-secondary">Top candidate</span>
+              {% if myco_scores and myco_scores.mycobank_expl %}
+                {% if "UPDATED" in myco_scores.mycobank_expl %}
+                  <span class="badge bg-info text-dark">{{ myco_scores.mycobank_expl }}</span>
+                {% elif "TAXON" in myco_scores.mycobank_expl %}
+                  <span class="badge bg-primary">{{ myco_scores.mycobank_expl }}</span>
+                {% else %}
+                  <span class="badge bg-light text-dark">{{ myco_scores.mycobank_expl }}</span>
+                {% endif %}
+              {% endif %}
+            </p>
+            <p class="mb-1"><strong>ID:</strong> {{ myco_candidate.mycobank_id }}</p>
+            <p class="mb-1"><strong>Name:</strong>
+              {{ myco_candidate.current_name|default:myco_candidate.taxon_name|default:"—" }}</p>
+            {% if myco_candidate.hyperlink %}
+              <p class="mb-1"><a href="{{ myco_candidate.hyperlink }}" target="_blank" rel="noopener">MycoBank page</a></p>
+            {% endif %}
+            <a class="btn btn-sm btn-outline-info" href="{% url 'core:detail' record.foray_id %}">Open Detail</a>
+
+          {% else %}
+            <p class="text-muted mb-2">No MycoBank record stored for this Foray yet.</p>
+            <a class="btn btn-sm btn-outline-info" href="{% url 'core:detail' record.foray_id %}">Open Detail</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title mb-3">🧮 Similarity Scores</h5>
+          {% if myco_scores %}
+            {% with org=myco_scores.org_score|default:0 conf=myco_scores.conf_score|default:0 foray=myco_scores.foray_score|default:0 %}
+            <table class="table table-sm mb-0">
+              <tbody>
+                <tr class="{% if org >= conf and org >= foray %}table-success{% endif %}">
+                  <th class="w-50">Org ↔ Myco</th>
+                  <td>{{ myco_scores.org_score|default:"—" }}</td>
+                </tr>
+                <tr class="{% if conf >= org and conf >= foray %}table-success{% endif %}">
+                  <th>Conf ↔ Myco</th>
+                  <td>{{ myco_scores.conf_score|default:"—" }}</td>
+                </tr>
+                <tr class="{% if foray >= org and foray >= conf %}table-success{% endif %}">
+                  <th>Foray ↔ Myco</th>
+                  <td>{{ myco_scores.foray_score|default:"—" }}</td>
+                </tr>
+              </tbody>
+            </table>
+            {% endwith %}
+          {% else %}
+            <p class="text-muted mb-0">No scores available for this record.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review form -->
+  <form method="post" class="mt-4">
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Validated Name</label>
+        {{ form.validated_name|add_class:"form-control" }}
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Your Name</label>
+        {{ form.reviewer_name|add_class:"form-control" }}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Status</label>
+        {{ form.status|add_class:"form-select" }}
+      </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" name="save_only" class="btn btn-primary">💾 Save Only</button>
+      <button type="submit" name="save_next" class="btn btn-success">⏭ Save &amp; Next</button>
+      <button type="submit" name="skip" class="btn btn-warning" formnovalidate>⏸ Skip (mark Pending)</button>
+      <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary">🏠 Exit</a>
+    </div>
+  </form>
+
+</div>
+</body>
+</html>

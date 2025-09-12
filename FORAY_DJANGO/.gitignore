@@ -1,17 +1,36 @@
-FORAY_DJANGO/env/
-FORAY_DJANGO/.venv/
-FORAY_DJANGO/venv/
-FORAY_DJANGO/db.sqlite3
+@"
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Virtual envs
+env/
+.venv/
+venv/
+
+# Django
+db.sqlite3
+staticfiles/
+media/
+
+# Config / secrets
+*.env
+.env.*
+
+# Data – no csv file
+data/**
 FORAY_DJANGO/data/**
 *.csv
 *.tsv
 *.xlsx
 *.xls
-
-__pycache__/
-*.py[cod]
-*.egg-info/
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
+"@ | Out-File -Encoding utf8 .gitignore
