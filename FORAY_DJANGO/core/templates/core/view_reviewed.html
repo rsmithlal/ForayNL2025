@@ -19,7 +19,7 @@
       </select>
     </div>
     <div class="col-auto">
-      <a class="btn btn-outline-secondary" href="{% url 'core:view_reviewed' %}">Reset</a>
+      <a class="btn btn-outline-secondary" href="{% url 'view_reviewed' %}">Reset</a>
     </div>
   </form>
 
@@ -67,13 +67,13 @@
         <td>{{ r.reviewed_at|date:"Y-m-d H:i" }}</td>
         <td class="d-flex gap-2">
           <!-- Detail -->
-          <a class="btn btn-sm btn-outline-info" href="{% url 'core:detail' r.foray_id %}">Detail</a>
+          <a class="btn btn-sm btn-outline-info" href="{% url 'detail' r.foray_id %}">Detail</a>
 
           <!-- Edit (open in review flow) -->
-          <a class="btn btn-sm btn-outline-primary" href="{% url 'core:review_next' %}?foray_id={{ r.foray_id }}">Edit</a>
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'review_next' %}?foray_id={{ r.foray_id }}">Edit</a>
 
           <!-- Reopen (soft delete → back to review) -->
-          <form method="post" action="{% url 'core:reviewed_reset' r.foray_id %}" class="m-0 p-0 d-inline">
+          <form method="post" action="{% url 'reviewed_reset' r.foray_id %}" class="m-0 p-0 d-inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-sm btn-outline-danger"
                     onclick="return confirm('Send {{ r.foray_id }} back to the review queue?');">

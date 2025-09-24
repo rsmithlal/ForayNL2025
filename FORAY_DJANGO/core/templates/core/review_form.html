@@ -71,7 +71,7 @@
           {% if myco_perfect %}
             <p class="mb-1"><strong>ID:</strong> {{ myco_perfect.mycobank_id }}</p>
             <p class="mb-1"><strong>Name:</strong> {{ myco_perfect.mycobank_name }}</p>
-            <a class="btn btn-sm btn-outline-info" href="{% url 'core:detail' record.foray_id %}">Open Detail</a>
+            <a class="btn btn-sm btn-outline-info" href="{% url 'detail' record.foray_id %}">Open Detail</a>
 
           {% elif myco_candidate %}
             <p class="mb-1"><span class="badge bg-secondary">Top candidate</span>
@@ -91,11 +91,11 @@
             {% if myco_candidate.hyperlink %}
               <p class="mb-1"><a href="{{ myco_candidate.hyperlink }}" target="_blank" rel="noopener">MycoBank page</a></p>
             {% endif %}
-            <a class="btn btn-sm btn-outline-info" href="{% url 'core:detail' record.foray_id %}">Open Detail</a>
+            <a class="btn btn-sm btn-outline-info" href="{% url 'detail' record.foray_id %}">Open Detail</a>
 
           {% else %}
             <p class="text-muted mb-2">No MycoBank record stored for this Foray yet.</p>
-            <a class="btn btn-sm btn-outline-info" href="{% url 'core:detail' record.foray_id %}">Open Detail</a>
+            <a class="btn btn-sm btn-outline-info" href="{% url 'detail' record.foray_id %}">Open Detail</a>
           {% endif %}
         </div>
       </div>
@@ -154,7 +154,7 @@
       <button type="submit" name="save_only" class="btn btn-primary">💾 Save Only</button>
       <button type="submit" name="save_next" class="btn btn-success">⏭ Save &amp; Next</button>
       <button type="submit" name="skip" class="btn btn-warning" formnovalidate>⏸ Skip (mark Pending)</button>
-      <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary">🏠 Exit</a>
+      <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">🏠 Exit</a>
     </div>
   </form>
 

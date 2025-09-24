@@ -22,7 +22,7 @@
     </div>
     <div class="col-sm-4 col-md-6 d-flex gap-2">
       <button class="btn btn-primary" type="submit">Filter</button>
-      <a class="btn btn-outline-secondary" href="{% url 'core:myco_perfect' %}">Reset</a>
+      <a class="btn btn-outline-secondary" href="{% url 'myco_perfect' %}">Reset</a>
     </div>
   </form>
 
@@ -44,7 +44,7 @@
         {% for r in rows %}
         <tr>
           <td class="text-nowrap">
-            <a href="{% url 'core:detail' r.foray_id %}" class="link-primary text-decoration-none">
+            <a href="{% url 'detail' r.foray_id %}" class="link-primary text-decoration-none">
               {{ r.foray_id }}
             </a>
           </td>
@@ -54,7 +54,7 @@
           <td>{{ r.mycobank_id|default:"—" }}</td>
           <td>{{ r.mycobank_name|default:"—" }}</td>
           <td>
-            <a class="btn btn-sm btn-outline-info" href="{% url 'core:detail' r.foray_id %}">Detail</a>
+            <a class="btn btn-sm btn-outline-info" href="{% url 'detail' r.foray_id %}">Detail</a>
           </td>
         </tr>
         {% endfor %}

@@ -21,7 +21,7 @@
         <div class="card-body d-flex flex-column">
           <h5 class="card-title">✅ View Perfect / Partial Matches</h5>
           <p class="card-text text-muted">Browse 3-column foray comparisons (perfect & pairwise) with filter + CSV export.</p>
-          <a href="{% url 'core:match_browser' %}" class="btn btn-success mt-auto" aria-label="Open match browser">
+          <a href="{% url 'match_browser' %}" class="btn btn-success mt-auto" aria-label="Open match browser">
             Open Match Browser
           </a>
         </div>
@@ -33,7 +33,7 @@
         <div class="card-body d-flex flex-column">
           <h5 class="card-title">🛠 Review Unmatched Records</h5>
           <p class="card-text text-muted">Step through mismatches, validate a name, and save progress anytime.</p>
-          <a href="{% url 'core:review_next' %}" class="btn btn-warning mt-auto" aria-label="Start reviewing">
+          <a href="{% url 'review_next' %}" class="btn btn-warning mt-auto" aria-label="Start reviewing">
             Start Reviewing
           </a>
         </div>
@@ -45,7 +45,7 @@
         <div class="card-body d-flex flex-column">
           <h5 class="card-title">📋 View Reviewed Results</h5>
           <p class="card-text text-muted">See all records validated by you or your team, with timestamps.</p>
-          <a href="{% url 'core:view_reviewed' %}" class="btn btn-info mt-auto" aria-label="Open reviewed list">
+          <a href="{% url 'view_reviewed' %}" class="btn btn-info mt-auto" aria-label="Open reviewed list">
             Open Reviewed
           </a>
         </div>
@@ -60,7 +60,7 @@
         <div class="card-body d-flex flex-column">
           <h5 class="card-title">✅ Perfect + MycoBank</h5>
           <p class="card-text text-muted">Where all 3 foray names match and there’s an exact MycoBank hit.</p>
-          <a href="{% url 'core:myco_perfect' %}" class="btn btn-success mt-auto" aria-label="Open perfect plus MycoBank">
+          <a href="{% url 'myco_perfect' %}" class="btn btn-success mt-auto" aria-label="Open perfect plus MycoBank">
             Open Perfect + MycoBank
           </a>
         </div>
@@ -72,7 +72,7 @@
         <div class="card-body d-flex flex-column">
           <h5 class="card-title">🧪 Mismatch → Myco Scores</h5>
           <p class="card-text text-muted">Inspect RapidFuzz similarity scores vs MycoBank for each column.</p>
-          <a href="{% url 'core:myco_mismatch' %}" class="btn btn-warning mt-auto" aria-label="Open mismatch to Myco scores">
+          <a href="{% url 'myco_mismatch' %}" class="btn btn-warning mt-auto" aria-label="Open mismatch to Myco scores">
             Open Myco Scores
           </a>
         </div>

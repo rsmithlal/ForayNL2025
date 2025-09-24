@@ -54,7 +54,7 @@
     <!-- Buttons -->
     <div class="col-sm-3 col-md-5 d-flex gap-2">
       <button type="submit" class="btn btn-primary">🔍 Filter</button>
-      <a href="{% url 'core:match_browser' %}" class="btn btn-outline-secondary">Reset</a>
+      <a href="{% url 'match_browser' %}" class="btn btn-outline-secondary">Reset</a>
       <button type="submit" name="export" value="1" class="btn btn-success ms-auto">📥 Export CSV</button>
     </div>
   </form>
@@ -76,7 +76,7 @@
         {% for item in matches %}
         <tr>
           <td>
-            <a href="{% url 'core:detail' item.foray_id %}" class="link-primary text-decoration-none">
+            <a href="{% url 'detail' item.foray_id %}" class="link-primary text-decoration-none">
               {{ item.foray_id }}
             </a>
           </td>
@@ -99,7 +99,7 @@
             {% endif %}
           </td>
           <td>
-            <a class="btn btn-sm btn-outline-info" href="{% url 'core:detail' item.foray_id %}">View</a>
+            <a class="btn btn-sm btn-outline-info" href="{% url 'detail' item.foray_id %}">View</a>
           </td>
         </tr>
         {% endfor %}
