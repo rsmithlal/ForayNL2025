@@ -2,11 +2,5 @@ Django==5.2.4
 pandas>=2.2
 rapidfuzz>=3.9
 django-widget-tweaks>=1.5
-
-'''
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -U pip setuptools wheel
-
-python manage.py runserver
-'''
+psycopg2-binary>=2.9.0
+python-decouple>=3.8
