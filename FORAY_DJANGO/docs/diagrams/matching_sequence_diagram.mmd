@@ -1,0 +1,98 @@
+sequenceDiagram
+    participant M as Management Command
+    participant P as Pipeline (run_pipeline)
+    participant L as Data Loader
+    participant I as Index Builder
+    participant E as Thread Executor
+    participant BM as best_match Function
+    participant C as LRU Cache
+    participant DB as Database Models
+    
+    Note over M,DB: 🍄 ForayNL Matching Pipeline Execution Flow
+    
+    M->>P: call run_pipeline()
+    
+    Note over P,L: 📁 Data Loading Phase
+    P->>L: Load Foray CSV (983 records)
+    L-->>P: DataFrame with normalized columns
+    P->>L: Load MycoBank CSV (537k records)
+    L-->>P: DataFrame with column mapping
+    
+    Note over P,I: 🔍 Index Construction Phase
+    P->>I: Build first-letter candidate index
+    loop For each MycoBank record
+        I->>I: Extract preferred_name
+        I->>I: Group by first_letter[0].upper()
+        I->>I: Store (taxon, current, row_dict)
+    end
+    I-->>P: grouped_candidates dict[letter, list[tuples]]
+    
+    Note over P,E: 🧵 Processing Setup Phase
+    P->>P: Calculate worker count (2×CPU, clamped 4-16)
+    P->>E: Create ThreadPoolExecutor(max_workers)
+    
+    Note over P,DB: 🔄 Main Processing Loop
+    loop For each Foray record (983 times)
+        P->>P: Extract foray_id, a, b, c (3 name variants)
+        
+        alt Perfect Match (a == b == c)
+            P->>DB: Create ForayPerfectMatch(foray_id, name)
+            P->>E: Submit best_match(a, "FORAY") for exact lookup
+            E->>BM: Execute best_match with query=a
+            BM->>C: Check LRU cache for query
+            alt Cache Hit
+                C-->>BM: Return cached result
+            else Cache Miss
+                BM->>BM: Get candidates from first_letter index
+                BM->>BM: RapidFuzz scoring vs taxon_name & current_name
+                BM->>BM: Select higher score (TAXON vs UPDATED)
+                BM->>C: Store result in LRU cache
+            end
+            BM-->>E: Return (best_row, score, explanation)
+            E-->>P: Future result
+            
+            alt Exact Hit (score == 100)
+                P->>DB: Create ForayPerfectMycoMatch(foray_id, mycobank_id)
+            end
+            
+        else Mismatch (names differ)
+            P->>P: Classify mismatch type (ORG_CONF_MATCH, etc.)
+            P->>DB: Create ForayMismatchExplanation(foray_id, explanation)
+            
+            Note over P,E: 🔄 Parallel Candidate Search
+            par Parallel Execution
+                P->>E: Submit best_match(a, "ORG")
+            and
+                P->>E: Submit best_match(b, "CONF")  
+            and
+                P->>E: Submit best_match(c, "FORAY")
+            end
+            
+            loop For each parallel task
+                E->>BM: Execute best_match
+                BM->>C: Check/update LRU cache
+                BM->>BM: First-letter lookup & scoring
+                BM-->>E: Return (row, score, explanation)
+            end
+            
+            E-->>P: Collect all three results
+            P->>P: Compare scores, select best overall
+            P->>DB: Create ForayMismatchMycoScores(scores + best_candidate)
+        end
+        
+        Note over P,P: 📊 Progress Reporting
+        opt Every 100 records
+            P->>P: Calculate elapsed time, rate, ETA
+            P->>P: Count perfect matches & mismatches
+            P->>P: Log progress with emoji indicators
+        end
+    end
+    
+    Note over P,E: 🏁 Cleanup Phase
+    P->>E: Shutdown ThreadPoolExecutor
+    P-->>M: Return (perfect_list, mismatch_list, perfect_myco, mismatch_scores)
+    
+    Note over M,DB: 📊 Final Results Summary
+    M->>M: Process returned results
+    M->>M: Log final statistics
+    M->>M: Optionally persist to additional models

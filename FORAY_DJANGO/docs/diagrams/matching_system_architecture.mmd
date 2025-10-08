@@ -1,0 +1,83 @@
+graph LR
+    %% Data Inputs
+    subgraph "📁 Input Data"
+        A1[📄 Foray CSV<br/>983 records<br/>id, org_entry, conf_name, foray_name]
+        A2[🗄️ MycoBank CSV<br/>537k+ records<br/>id, taxon_name, current_name, authors, year]
+    end
+    
+    %% Processing Layer
+    subgraph "⚙️ Processing Engine"
+        B1[🔄 Data Normalization<br/>_norm function<br/>column mapping<br/>encoding handling]
+        B2[🔍 Index Construction<br/>first-letter bucketing<br/>candidate grouping<br/>memory optimization]
+        B3[🧵 Parallel Processing<br/>ThreadPoolExecutor<br/>worker scaling<br/>GIL release optimization]
+    end
+    
+    %% Core Algorithm
+    subgraph "🎯 Matching Algorithm"
+        C1[📊 best_match Function<br/>RapidFuzz scoring<br/>LRU caching<br/>explanation generation]
+        C2[🔍 Candidate Selection<br/>taxon vs updated preference<br/>score comparison<br/>result packaging]
+        C3[📈 Score Aggregation<br/>parallel execution<br/>best overall selection<br/>confidence ranking]
+    end
+    
+    %% Decision Logic
+    subgraph "🎯 Classification Logic"
+        D1{Perfect Match?<br/>a == b == c}
+        D2{Exact DB Hit?<br/>score == 100}
+        D3[📋 Mismatch Categories<br/>ORG_CONF_MATCH<br/>ORG_FORAY_MATCH<br/>CONF_FORAY_MATCH<br/>ALL_DIFFERENT]
+    end
+    
+    %% Output Models
+    subgraph "📤 Output Results"
+        E1[✅ ForayPerfectMatch<br/>foray_id + name<br/>high confidence]
+        E2[🏆 ForayPerfectMycoMatch<br/>perfect + exact hit<br/>definitive taxonomy]
+        E3[📋 ForayMismatchExplanation<br/>mismatch categorization<br/>relationship analysis]
+        E4[📊 ForayMismatchMycoScores<br/>scored candidates<br/>best guess taxonomy]
+    end
+    
+    %% Performance Features
+    subgraph "⚡ Performance Optimizations"
+        F1[🔍 First-Letter Indexing<br/>O n×m/26 complexity<br/>25x speedup]
+        F2[💾 LRU Caching<br/>100k entry limit<br/>repeated query optimization]
+        F3[🧵 Threading Strategy<br/>shared executor<br/>CPU-bound optimization]
+        F4[📊 Progress Reporting<br/>real-time metrics<br/>ETA calculation]
+    end
+    
+    %% Data Flow Connections
+    A1 --> B1
+    A2 --> B1
+    B1 --> B2
+    B2 --> B3
+    B3 --> C1
+    C1 --> C2
+    C2 --> C3
+    C3 --> D1
+    
+    D1 -->|YES| D2
+    D2 -->|YES| E2
+    D2 -->|NO| E1
+    
+    D1 -->|NO| D3
+    D3 --> E3
+    D3 --> C3
+    C3 --> E4
+    
+    %% Performance Integration
+    B2 -.-> F1
+    C1 -.-> F2
+    B3 -.-> F3
+    B3 -.-> F4
+    
+    %% Styling
+    classDef inputClass fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef processClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef algorithmClass fill:#fff8e1,stroke:#f57f17,stroke-width:2px
+    classDef decisionClass fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef outputClass fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef perfClass fill:#fce4ec,stroke:#ad1457,stroke-width:1px,stroke-dasharray: 3 3
+    
+    class A1,A2 inputClass
+    class B1,B2,B3 processClass
+    class C1,C2,C3 algorithmClass
+    class D1,D2,D3 decisionClass
+    class E1,E2,E3,E4 outputClass
+    class F1,F2,F3,F4 perfClass

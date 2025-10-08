@@ -1,0 +1,113 @@
+graph LR
+    %% Threading Architecture
+    subgraph "🧵 Threading Architecture"
+        A[📋 Main Thread<br/>Pipeline Orchestration]
+        B[🏭 ThreadPoolExecutor<br/>Shared Worker Pool]
+        C[👷 Worker Thread 1<br/>best_match execution]
+        D[👷 Worker Thread 2<br/>best_match execution]  
+        E[👷 Worker Thread N<br/>best_match execution]
+    end
+    
+    %% Memory Management
+    subgraph "💾 Memory Management"
+        F[📚 Shared Index<br/>grouped_candidates<br/>Read-only access]
+        G[💰 LRU Cache<br/>100k entries<br/>Thread-safe]
+        H[📊 Result Collections<br/>Thread-local storage<br/>perfect_list, mismatch_list]
+    end
+    
+    %% Performance Metrics
+    subgraph "📊 Performance Characteristics"
+        I[⚡ Algorithmic Speedup<br/>First-letter indexing<br/>O n×m/26 vs O n×m]
+        J[🎯 Cache Efficiency<br/>Repeated queries<br/>O 1 vs O m lookups]
+        K[🧵 Parallel Speedup<br/>GIL release in RapidFuzz<br/>True multi-core utilization]
+        L[📈 Progress Tracking<br/>Real-time metrics<br/>ETA calculation]
+    end
+    
+    %% Resource Optimization
+    subgraph "🎛️ Resource Management"
+        M[⚙️ Dynamic Scaling<br/>Worker count = 2×CPU<br/>Clamped to 4-16]
+        N[🔄 Executor Reuse<br/>Shared ThreadPoolExecutor<br/>Reduced overhead]
+        O[📊 Memory Bounds<br/>LRU cache limits<br/>Streaming processing]
+        P[⏱️ Time Tracking<br/>Elapsed time monitoring<br/>Rate calculation]
+    end
+    
+    %% Data Flow Connections
+    A --> B
+    B --> C
+    B --> D
+    B --> E
+    
+    C --> F
+    D --> F
+    E --> F
+    
+    C --> G
+    D --> G
+    E --> G
+    
+    C --> H
+    D --> H
+    E --> H
+    
+    %% Performance Integration
+    F -.-> I
+    G -.-> J
+    C -.-> K
+    D -.-> K
+    E -.-> K
+    B -.-> L
+    
+    %% Resource Integration
+    B -.-> M
+    A -.-> N
+    G -.-> O
+    H -.-> O
+    A -.-> P
+    
+    %% Performance Metrics Detail
+    subgraph "📈 Detailed Metrics"
+        Q[🎯 Theoretical Performance<br/>983 × 537k = 527M comparisons<br/>With indexing: 983 × 22k = 21M<br/>25x algorithmic improvement]
+        
+        R[⏱️ Time Complexity<br/>Without optimization: O n×m<br/>With first-letter: O n×m/alphabet_size<br/>With caching: O 1 for repeated queries]
+        
+        S[💾 Space Complexity<br/>Index: O m storage<br/>Cache: O min cache_size, unique_queries<br/>Results: O n output records]
+        
+        T[🧵 Threading Efficiency<br/>RapidFuzz releases GIL<br/>CPU-bound work scales linearly<br/>Worker count optimized for hardware]
+    end
+    
+    %% Real-world Performance
+    subgraph "⚡ Expected Performance"
+        U[📊 Processing Rate<br/>Target: 100+ records/sec<br/>Depends on: CPU cores, cache hits<br/>Threading efficiency]
+        
+        V[🎯 Cache Hit Ratio<br/>High for repeated species<br/>Improves with dataset overlap<br/>100k entries = ~20% of MycoBank]
+        
+        W[💾 Memory Usage<br/>Index: ~50MB for 537k records<br/>Cache: ~100MB at full capacity<br/>Results: Minimal streaming storage]
+        
+        X[⏱️ Total Runtime<br/>Estimated: 2-5 minutes<br/>983 records @ 100-400/sec<br/>Including I/O and progress reporting]
+    end
+    
+    %% Connect detailed metrics
+    I -.-> Q
+    I -.-> R
+    O -.-> S
+    K -.-> T
+    
+    L -.-> U
+    J -.-> V
+    O -.-> W
+    P -.-> X
+    
+    %% Styling
+    classDef threadClass fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px
+    classDef memoryClass fill:#e0f2f1,stroke:#00796b,stroke-width:2px
+    classDef perfClass fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef resourceClass fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef metricsClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1px,stroke-dasharray: 3 3
+    classDef expectedClass fill:#e8f5e8,stroke:#388e3c,stroke-width:1px,stroke-dasharray: 5 5
+    
+    class A,B,C,D,E threadClass
+    class F,G,H memoryClass
+    class I,J,K,L perfClass
+    class M,N,O,P resourceClass
+    class Q,R,S,T metricsClass
+    class U,V,W,X expectedClass

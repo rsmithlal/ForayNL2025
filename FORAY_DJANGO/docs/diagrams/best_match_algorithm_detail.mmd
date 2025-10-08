@@ -1,0 +1,115 @@
+graph TD
+    %% Algorithm Core
+    subgraph "🎯 best_match Algorithm Core"
+        A[📥 Input: query, source]
+        A --> B[🧹 Normalize query with _norm]
+        B --> C{🔍 Query empty?}
+        C -->|YES| D[❌ Return None, 0, ""]
+        C -->|NO| E[🔤 Extract first_letter = query0.upper]
+    end
+    
+    %% Cache Layer
+    subgraph "💾 LRU Cache Layer"
+        E --> F{💰 Cache hit for query?}
+        F -->|HIT| G[⚡ Return cached result]
+        F -->|MISS| H[🔄 Proceed to computation]
+    end
+    
+    %% Index Lookup
+    subgraph "🔍 Candidate Lookup"
+        H --> I[📚 Get candidates from grouped_candidates first_letter]
+        I --> J{📋 Candidates exist?}
+        J -->|NO| K[❌ Return None, 0, ""]
+        J -->|YES| L[🔄 Initialize best_score=0, best_row=None]
+    end
+    
+    %% Scoring Loop
+    subgraph "📊 RapidFuzz Scoring Loop"
+        L --> M[🔄 For each taxon, current, row_dict in candidates]
+        M --> N[📊 score_taxon = fuzz.ratio query, taxon]
+        N --> O[📊 score_current = fuzz.ratio query, current]
+        
+        O --> P{🏆 score_taxon >= score_current?}
+        P -->|YES| Q{📈 score_taxon > best_score?}
+        P -->|NO| R{📈 score_current > best_score?}
+        
+        Q -->|YES| S[✅ Update: best_score=score_taxon<br/>best_row=row_dict<br/>explanation=source→TAXON]
+        Q -->|NO| T[➡️ Continue to next candidate]
+        
+        R -->|YES| U[✅ Update: best_score=score_current<br/>best_row=row_dict<br/>explanation=source→UPDATED]  
+        R -->|NO| T
+        
+        S --> T
+        U --> T
+        T --> V{🔄 More candidates?}
+        V -->|YES| M
+        V -->|NO| W[🏁 Scoring complete]
+    end
+    
+    %% Result Processing
+    subgraph "📤 Result Processing"
+        W --> X[📊 Package result: best_row, int best_score, explanation]
+        X --> Y[💾 Store in LRU cache maxsize=100,000]
+        Y --> Z[📤 Return tuple best_row, score, explanation]
+    end
+    
+    %% Performance Optimizations
+    subgraph "⚡ Performance Features"
+        AA[🔍 First-Letter Indexing<br/>537k → ~22k candidates<br/>25x speedup]
+        BB[💾 LRU Caching<br/>100k entries<br/>O 1 cache hits]
+        CC[🧵 Thread Safety<br/>Pure function<br/>Immutable data]
+        DD[🎯 GIL Release<br/>RapidFuzz C extension<br/>True parallelism]
+    end
+    
+    %% Data Structure Detail
+    subgraph "🗂️ Index Structure Detail"
+        EE["📚 grouped_candidates<br/>{'A': [tuple1, tuple2, ...],<br/> 'B': [tuple3, tuple4, ...],<br/> 'C': [tuple5, tuple6, ...]}"]
+        FF["📝 Tuple Structure<br/>(taxon_name: str,<br/> current_name: str,<br/> row_dict: dict)"]
+        GG["🗃️ row_dict Contents<br/>{'mycobank_id': '12345',<br/> 'taxon_name': 'Agaricus...',<br/> 'current_name': 'Agaricus...',<br/> 'authors': 'L. 1753',<br/> 'year': '1753',<br/> 'hyperlink': 'http://...'}"]
+    end
+    
+    %% Example Flow
+    subgraph "📝 Example Execution"
+        HH["🔍 Query: 'Agaricus campestris'<br/>Source: 'ORG'"]
+        II["🔤 first_letter = 'A'"]
+        JJ["📚 candidates = grouped_candidates'A'<br/>~22,000 Agaricus species"]
+        KK["📊 Best match: 'Agaricus campestris'<br/>Score: 100 exact match<br/>Explanation: 'ORG → TAXON'"]
+    end
+    
+    %% Connect main flow
+    G --> Z
+    K --> Z
+    
+    %% Connect optimization annotations
+    I -.-> AA
+    F -.-> BB
+    A -.-> CC
+    N -.-> DD
+    O -.-> DD
+    
+    %% Connect data structure details
+    I -.-> EE
+    EE -.-> FF
+    FF -.-> GG
+    
+    %% Connect example
+    HH -.-> II
+    II -.-> JJ  
+    JJ -.-> KK
+    
+    %% Styling
+    classDef inputClass fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef processClass fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef decisionClass fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef outputClass fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    classDef cacheClass fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+    classDef optimizationClass fill:#fce4ec,stroke:#ad1457,stroke-width:1px,stroke-dasharray: 3 3
+    classDef exampleClass fill:#f1f8e9,stroke:#558b2f,stroke-width:1px,stroke-dasharray: 5 5
+    
+    class A,HH inputClass
+    class B,E,H,I,L,M,N,O,S,U,W,X,Y processClass
+    class C,F,J,P,Q,R,V decisionClass
+    class D,G,K,Z,KK outputClass
+    class T cacheClass
+    class AA,BB,CC,DD,EE,FF,GG optimizationClass
+    class II,JJ exampleClass

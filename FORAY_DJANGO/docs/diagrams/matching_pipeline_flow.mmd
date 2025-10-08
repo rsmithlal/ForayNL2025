@@ -1,0 +1,86 @@
+flowchart TD
+    %% Input Stage
+    A[📁 CSV Files Input] --> B[🔄 Data Loading & Validation]
+    B --> B1[📊 Foray CSV<br/>983 Records]
+    B --> B2[🗄️ MycoBank CSV<br/>537k+ Records]
+    
+    %% Data Processing Stage
+    B1 --> C[🧹 Data Normalization]
+    B2 --> C
+    C --> C1[📝 Column Mapping]
+    C --> C2[🔤 String Cleaning]
+    
+    %% Index Building Stage
+    C1 --> D[🔍 MycoBank Index Construction]
+    C2 --> D
+    D --> D1[📚 First-Letter Bucketing]
+    D --> D2[🏗️ Candidate Structure]
+    
+    %% Processing Configuration
+    D --> E[⚙️ Processing Configuration]
+    E --> E1[🧵 Worker Count Calculation]
+    E --> E2[🚩 Feature Flags]
+    
+    %% Main Processing Loop
+    E --> F[🔄 Main Processing Loop]
+    D1 --> F
+    D2 --> F
+    
+    %% Record Processing Decision Tree
+    F --> G{🎯 Perfect Match?}
+    
+    %% Perfect Match Path
+    G -->|YES| H[✅ Perfect Match Processing]
+    H --> H1[💾 Create ForayPerfectMatch]
+    H1 --> H2{🎯 Exact DB Hit?}
+    H2 -->|YES| H3[🏆 Create ForayPerfectMycoMatch]
+    H2 -->|NO| H4[📝 Perfect Match Only]
+    
+    %% Mismatch Path
+    G -->|NO| I[⚠️ Mismatch Processing]
+    I --> I1[📋 Mismatch Classification]
+    I1 --> I2{🔍 Which Names Match?}
+    I2 -->|Org+Conf| I3[📊 ORG_CONF_MATCH]
+    I2 -->|Org+Foray| I4[📊 ORG_FORAY_MATCH]  
+    I2 -->|Conf+Foray| I5[📊 CONF_FORAY_MATCH]
+    I2 -->|None| I6[📊 ALL_DIFFERENT]
+    
+    I3 --> J[💾 Create ForayMismatchExplanation]
+    I4 --> J
+    I5 --> J
+    I6 --> J
+    
+    %% Parallel Candidate Search
+    J --> K[🔄 Parallel Candidate Search]
+    K --> K1[🧵 Thread 1: ORG]
+    K --> K2[🧵 Thread 2: CONF]
+    K --> K3[🧵 Thread 3: FORAY]
+    
+    %% Best Match Algorithm
+    K1 --> L[🎯 Best Match Algorithm]
+    K2 --> L
+    K3 --> L
+    L --> L1[🔤 First Letter Lookup]
+    L1 --> L2[📊 RapidFuzz Scoring]
+    L2 --> L3[🏆 Choose Higher Score]
+    L3 --> L4[💰 LRU Cache Storage]
+    
+    %% Result Selection
+    L --> M[📊 Score Comparison & Selection]
+    M --> M1[🥇 Choose Best Overall]
+    M1 --> M2[💾 Create ForayMismatchMycoScores]
+    
+    %% Output Stage
+    H3 --> N[📤 Results Output]
+    H4 --> N
+    M2 --> N
+    
+    N --> N1[📊 ForayPerfectMatch]
+    N --> N2[📋 ForayMismatchExplanation]
+    N --> N3[🏆 ForayPerfectMycoMatch]
+    N --> N4[📈 ForayMismatchMycoScores]
+    
+    %% Progress Reporting
+    F --> P[📊 Progress Reporting]
+    P --> P1[⏱️ Every 100 Records]
+    P --> P2[📈 Result Counts]
