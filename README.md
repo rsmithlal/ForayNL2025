@@ -17,10 +17,13 @@ A small Django app for **Foray name matching** with **MycoBank** context.
 - [How Matching Works (Why)](#how-matching-works-why)
 - [Prerequisites](#prerequisites)
 - [Quickstart](#quickstart)
+- [Docker Setup](#docker-setup)
+- [Data Import](#data-import)  
 - [Run the Pipeline (optional)](#run-the-pipeline-optional)
 - [Key Pages](#key-pages)
 - [Data Models](#data-models)
 - [Management Commands](#management-commands)
+- [Documentation](#documentation)
 
 ---
 
@@ -95,9 +98,89 @@ This makes the pipeline fast and the UI always shows the **most informative** My
 
 ## Prerequisites
 
+### Option A: Docker (Recommended)
+- **Docker** and **Docker Compose**
+- **Git LFS** for large CSV files
+- ~200MB free disk space for database
+
+### Option B: Local Development  
 - **Python** 3.11+ (3.12 OK)
 - **pip**
 - (Windows) **PowerShell** recommended
+
+---
+
+## Docker Setup
+
+The application includes a complete Docker containerized development environment.
+
+### Quick Start with Docker
+```bash
+# 1. Navigate to Django app directory
+cd ForayNL2025/FORAY_DJANGO
+
+# 2. Download large CSV files via Git LFS
+git lfs pull
+
+# 3. Copy environment configuration
+cp .env.example .env
+
+# 4. Start the application
+docker compose up --build
+
+# 5. Run migrations (in another terminal)
+docker compose run --rm web python manage.py migrate
+
+# 6. Access the application
+# Web: http://localhost:8000
+# Admin: http://localhost:8000/admin
+```
+
+### Automated Setup Verification
+```bash
+# Run complete setup verification
+./verify_docker_setup.sh
+```
+
+This will build containers, test connectivity, run migrations, execute the test suite, and clean up.
+
+---
+
+## Data Import
+
+The application supports importing large taxonomic datasets using custom Django management commands.
+
+### Prerequisites for Import
+```bash
+# Ensure Git LFS files are downloaded
+git lfs pull
+
+# Verify files are actual data (not pointer files)
+ls -la data/
+# Should show: 2023ForayNL_Fungi.csv (~375KB), MBList.csv (~390MB)
+```
+
+### Import Process
+```bash
+# 1. Start database services
+docker compose up -d db redis
+
+# 2. Import Foray observation data
+docker compose run --rm web python manage.py import_foray_data data/2023ForayNL_Fungi.csv
+
+# 3. Import MycoBank reference database (takes 10-15 minutes)
+docker compose run --rm web python manage.py import_mycobank_data data/MBList.csv
+
+# 4. Verify import success
+docker compose run --rm web python manage.py data_stats
+```
+
+### Expected Results
+- **Foray Fungi**: 983 observation records (100% success rate)
+- **MycoBank Database**: 537,483 taxonomic references (99.995% success rate)  
+- **Total Database Size**: ~183MB
+
+See [DATA_IMPORT_GUIDE.md](FORAY_DJANGO/DATA_IMPORT_GUIDE.md) for detailed instructions.
 
 Python packages (see `requirements.txt`):
 - `Django==5.2.4`
@@ -205,10 +288,62 @@ This will:
 
 ## Management Commands
 
+### Core Pipeline
 - `python manage.py load_full_pipeline`  
   Runs the full pipeline and populates all result tables (clears them first).
 
+### Data Import Commands (New)
+- `python manage.py import_foray_data data/2023ForayNL_Fungi.csv`  
+  Import ForayNL 2023 fungi observation data (~983 records)
+
+- `python manage.py import_mycobank_data data/MBList.csv`  
+  Import MycoBank taxonomic reference database (~537,509 records)
+
+- `python manage.py data_stats`  
+  Display comprehensive database statistics and data quality metrics
+
+### Command Options
+- `--dry-run`: Preview import without making database changes
+- `--clear`: Clear existing data before importing
+
+### Docker Usage
+All commands should be run within the Docker environment:
+```bash
+# Import Foray data
+docker compose run --rm web python manage.py import_foray_data data/2023ForayNL_Fungi.csv
+
+# Import MycoBank data (takes 10-15 minutes)  
+docker compose run --rm web python manage.py import_mycobank_data data/MBList.csv
+
+# View statistics
+docker compose run --rm web python manage.py data_stats
+```
+
 You can add more commands under `core/management/commands/`.
+
+---
+
+## Documentation
+
+### Available Documentation
+- **[DOCKER_README.md](FORAY_DJANGO/DOCKER_README.md)**: Complete Docker setup and development workflow  
+- **[DATA_IMPORT_GUIDE.md](FORAY_DJANGO/DATA_IMPORT_GUIDE.md)**: Comprehensive guide for CSV data import
+- **[DOCKER_SETUP_COMPLETE.md](FORAY_DJANGO/DOCKER_SETUP_COMPLETE.md)**: Docker setup verification results
+
+### Docker Services
+- **web**: Django application server (port 8000)
+- **db**: PostgreSQL database (port 5432)  
+- **redis**: Redis cache/session store (port 6379)
+- **test**: Test runner service
+
+### Enhanced Features
+- **External Startup Scripts**: Beautiful console logging with `startup.sh` and `test-startup.sh`
+- **Batch Processing**: Memory-efficient import of large datasets (500K+ records)
+- **Encoding Detection**: Automatic handling of UTF-8, Latin-1, and other character encodings
+- **Progress Tracking**: Real-time indicators with emoji-enhanced console output
+- **Error Handling**: Graceful handling of malformed records with detailed reporting
+- **Transaction Safety**: Atomic database operations prevent partial imports
+- **Data Quality Metrics**: Comprehensive statistics on import success rates
 
 ---
 
