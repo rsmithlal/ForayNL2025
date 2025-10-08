@@ -72,8 +72,14 @@ def run_pipeline():
     if not os.path.exists(MYCOBANK_PATH):
         raise FileNotFoundError(f"Missing MycoBank CSV: {MYCOBANK_PATH}")
 
+    print(f"📁 Loading data files...")
+    print(f"   📄 Foray data: {FORAY_PATH}")
+    print(f"   📄 MycoBank data: {MYCOBANK_PATH}")
+    
     foray_df = pd.read_csv(FORAY_PATH, encoding="latin-1", dtype=str, usecols=foray_usecols).fillna("")
     myco_df = pd.read_csv(MYCOBANK_PATH, encoding="latin-1", dtype=str, usecols=myco_usecols).fillna("")
+    
+    print(f"✅ Data loaded: {len(foray_df):,} Foray records, {len(myco_df):,} MycoBank records")
 
     # Normalize columns to match DB schema
     myco_df = myco_df.rename(
@@ -97,6 +103,8 @@ def run_pipeline():
 
     # Build grouped candidates for the old matching logic:
     # key: first letter (upper), value: list of tuples (taxon, current, row_data_dict)
+    print(f"🔍 Building MycoBank search index by first letter...")
+    
     grouped_candidates: dict[str, list[tuple[str, str, dict]]] = {}
     for _, r in myco_df.iterrows():
         taxon = _norm(r["taxon_name"])
@@ -111,6 +119,8 @@ def run_pipeline():
         }
         key = (_preferred_name(taxon, updated)[:1] or taxon[:1] or updated[:1] or "#").upper()
         grouped_candidates.setdefault(key, []).append((taxon, updated, row_dict))
+    
+    print(f"✅ Search index built: {len(grouped_candidates)} letter groups, avg {len(myco_df)/len(grouped_candidates):.0f} records/group")
 
     # Optional: save originals (idempotent; can skip to speed re-runs)
     if not _env_truthy("SKIP_SAVE_ORIGINALS"):
@@ -223,17 +233,36 @@ def run_pipeline():
 
     # Iterate rows with a single shared executor (lower overhead)
     total = len(foray_df)
-    with ThreadPoolExecutor(max_workers=_choose_workers()) as ex:
+    workers = _choose_workers()
+    print(f"🧵 Starting matching pipeline with {workers} workers for {total:,} Foray records...")
+    
+    import time
+    start_time = time.time()
+    
+    with ThreadPoolExecutor(max_workers=workers) as ex:
         for i, row in enumerate(foray_df.itertuples(index=False), start=1):
             fid = _norm(row.id)
             a = _norm(row.genus_and_species_org_entry)
             b = _norm(row.genus_and_species_conf)
             c = _norm(row.genus_and_species_foray_name)
             row_work(ex, fid, a, b, c)
-            if i % 200 == 0:
-                print(f"[pipeline] processed {i}/{total} rows...")
+            
+            # Enhanced progress reporting
+            if i % 100 == 0 or i == total:
+                elapsed = time.time() - start_time
+                rate = i / elapsed if elapsed > 0 else 0
+                remaining = (total - i) / rate if rate > 0 else 0
+                
+                perfect_count = len(perfect_list)
+                mismatch_count = len(mismatch_list)
+                
+                print(f"📊 Progress: {i:,}/{total:,} ({i/total*100:.1f}%) | "
+                      f"Perfect: {perfect_count} | Mismatches: {mismatch_count} | "
+                      f"Rate: {rate:.1f}/sec | ETA: {remaining:.0f}s")
 
-    print("✅ Matching pipeline completed.")
+    elapsed_total = time.time() - start_time
+    print(f"✅ Matching pipeline completed in {elapsed_total:.1f} seconds!")
+    print(f"📈 Final Results: {len(perfect_list)} perfect matches, {len(mismatch_list)} mismatches")
     return perfect_list, mismatch_list, perfect_myco, mismatch_scores
 
 

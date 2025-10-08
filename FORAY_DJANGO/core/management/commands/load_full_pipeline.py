@@ -13,30 +13,55 @@ class Command(BaseCommand):
     help = 'Run the matching pipeline and populate all result tables'
 
     def handle(self, *args, **kwargs):
-        # clear old
-        ForayPerfectMatch.objects.all().delete()
-        ForayMismatchExplanation.objects.all().delete()
-        ForayPerfectMycoMatch.objects.all().delete()
-        ForayMismatchMycoScores.objects.all().delete()
-        ForayMatch.objects.all().delete()      # <-- add
-
+        import time
+        start_time = time.time()
+        
+        self.stdout.write("🗑️  Clearing existing match tables...")
+        
+        # Clear old records with progress
+        tables = [
+            ("ForayPerfectMatch", ForayPerfectMatch),
+            ("ForayMismatchExplanation", ForayMismatchExplanation), 
+            ("ForayPerfectMycoMatch", ForayPerfectMycoMatch),
+            ("ForayMismatchMycoScores", ForayMismatchMycoScores),
+            ("ForayMatch", ForayMatch)
+        ]
+        
+        for table_name, model in tables:
+            count = model.objects.count()
+            model.objects.all().delete()
+            self.stdout.write(f"   ✓ {table_name}: {count:,} records cleared")
+        
+        self.stdout.write("\n🚀 Starting matching pipeline...")
+        
         # run pipeline
         perfect_list, mismatch_list, perfect_myco, mismatch_scores = run_pipeline()
 
-        # write main tables
-        ForayPerfectMatch.objects.bulk_create([
-            ForayPerfectMatch(foray_id=row['foray_id'], name=row['name'])
-            for row in perfect_list
-        ])
-        ForayMismatchExplanation.objects.bulk_create([
-            ForayMismatchExplanation(**row) for row in mismatch_list
-        ])
-        ForayPerfectMycoMatch.objects.bulk_create([
-            ForayPerfectMycoMatch(**row) for row in perfect_myco
-        ])
-        ForayMismatchMycoScores.objects.bulk_create([
-            ForayMismatchMycoScores(**row) for row in mismatch_scores
-        ])
+        self.stdout.write("\n💾 Populating database tables...")
+        
+        # write main tables with progress
+        operations = [
+            ("ForayPerfectMatch", ForayPerfectMatch, [
+                ForayPerfectMatch(foray_id=row['foray_id'], name=row['name'])
+                for row in perfect_list
+            ]),
+            ("ForayMismatchExplanation", ForayMismatchExplanation, [
+                ForayMismatchExplanation(**row) for row in mismatch_list
+            ]),
+            ("ForayPerfectMycoMatch", ForayPerfectMycoMatch, [
+                ForayPerfectMycoMatch(**row) for row in perfect_myco
+            ]),
+            ("ForayMismatchMycoScores", ForayMismatchMycoScores, [
+                ForayMismatchMycoScores(**row) for row in mismatch_scores
+            ])
+        ]
+        
+        for table_name, model, objects in operations:
+            if objects:
+                model.objects.bulk_create(objects, batch_size=1000)
+                self.stdout.write(f"   ✓ {table_name}: {len(objects):,} records inserted")
+            else:
+                self.stdout.write(f"   - {table_name}: No records to insert")
 
         # --- NEW: also build ForayMatch so the browser has data ---
         # perfect rows need the three Foray columns; fetch from ForayFungi2023
@@ -70,7 +95,14 @@ class Command(BaseCommand):
                 match_category=cat,
             ))
 
+        # Create unified ForayMatch table
         if match_rows:
             ForayMatch.objects.bulk_create(match_rows, batch_size=1000)
-
-        self.stdout.write(self.style.SUCCESS("All tables populated (including ForayMatch)."))
+            self.stdout.write(f"   ✓ ForayMatch (unified): {len(match_rows):,} records inserted")
+        else:
+            self.stdout.write(f"   - ForayMatch (unified): No records to insert")
+        
+        # Final summary
+        elapsed = time.time() - start_time
+        self.stdout.write(f"\n🎉 Pipeline completed successfully in {elapsed:.1f} seconds!")
+        self.stdout.write(self.style.SUCCESS(f"📊 Summary: {len(perfect_list)} perfect matches, {len(mismatch_list)} mismatches processed"))
