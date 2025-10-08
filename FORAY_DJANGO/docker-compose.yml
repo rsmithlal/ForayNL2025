@@ -1,0 +1,116 @@
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    container_name: foray_db
+    environment:
+      POSTGRES_DB: foraynl
+      POSTGRES_USER: foraynl
+      POSTGRES_PASSWORD: foraynl_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U foray_user -d foray_development"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - foray_network
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: foray_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - foray_network
+
+  # Django Web Application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: foray_web
+    environment:
+      - DEBUG=True
+      - DJANGO_SECRET_KEY=dev-secret-key-for-docker-only
+      - DATABASE_URL=postgresql://foray_user:foray_password@db:5432/foray_development
+      - REDIS_URL=redis://redis:6379/0
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - logs_volume:/app/logs
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["./startup.sh"]
+    healthcheck:
+      test: ["CMD", "python", "manage.py", "check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - foray_network
+
+  # Test runner service
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: foray_test
+    environment:
+      - DEBUG=True
+      - DJANGO_SECRET_KEY=test-secret-key-for-testing
+      - DATABASE_URL=postgresql://foray_user:foray_password@db:5432/test_foray_development
+      - REDIS_URL=redis://redis:6379/1
+      - TESTING=True
+    volumes:
+      - .:/app
+      - test_coverage:/app/htmlcov
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["./test-startup.sh"]
+    networks:
+      - foray_network
+    profiles:
+      - test
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  static_volume:
+    driver: local
+  media_volume:
+    driver: local
+  logs_volume:
+    driver: local
+  test_coverage:
+    driver: local
+
+networks:
+  foray_network:
+    driver: bridge
