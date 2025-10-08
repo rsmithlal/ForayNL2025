@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Convenience script - calls the full render_diagrams.sh script
+
+cd "$(dirname "$0")/.."
+exec scripts/render_diagrams.sh "$@"
